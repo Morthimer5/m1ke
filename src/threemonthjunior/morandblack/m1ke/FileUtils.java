@@ -5,6 +5,8 @@ package threemonthjunior.morandblack.m1ke;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -62,7 +64,7 @@ final class FileUtils {
      * @throws IllegalArgumentException
      *         if the path provided doesn't exist or doesn't represent a file
      */
-    public static String calculateHash(Path pathToFile) {
+    public static String calculateHash(Path pathToFile) throws NoSuchAlgorithmException, IOException {
         if (!Files.exists(pathToFile))
             throw new IllegalArgumentException(
                     "Path doesn't exist: '" + pathToFile + "'");
@@ -74,10 +76,10 @@ final class FileUtils {
 
         // TODO calc hash, see md5_tip.java but use sha-1 instead 
 
-        try {
+
             InputStream is = Files.newInputStream(pathToFile);
 
-            MessageDigest md = MessageDigest.getInstance("SHA1");
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
             byte[] dataBytes = new byte[1024];
 
             int read = 0;
@@ -88,19 +90,13 @@ final class FileUtils {
 
             byte[] res = md.digest();
 
-            return bytesToHex(res);
+            return String.format("%016d", Files.size(pathToFile)) +  bytesToHex(res);
 
-
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         /*
          * get file size from Files.getSize(Path) and calc SHA-1, then concatenate 
          */
         
-        return null;
+
     }
     
     /**
@@ -109,10 +105,32 @@ final class FileUtils {
      * @return true if and only if both files exist 
      *         and their contents are identical.
      */
-    public static boolean contentEquals(Path file1, Path file2) {
+    public static boolean contentEquals(Path file1, Path file2) throws IOException {
         // TODO this would probably never be called but should be implemented
-        
-        return false;
+        if(Files.size(file1) != Files.size(file2)) return false;
+        long mapspan = 64*1024;
+        long size = Files.size(file1);
+
+        try (FileChannel chan1 = (FileChannel)Files.newByteChannel(file1);
+             FileChannel chan2 = (FileChannel)Files.newByteChannel(file2)) {
+
+            //Check about MappedBuffer
+            for (long position = 0; position < size; position += mapspan) {
+                MappedByteBuffer mba = chan1.map(
+                        FileChannel.MapMode.READ_ONLY, position, mapspan);
+                MappedByteBuffer mbb = chan2.map(
+                        FileChannel.MapMode.READ_ONLY, position, mapspan);
+
+                if (mba.compareTo(mbb) != 0) {
+                    return false;
+                }
+
+            }
+
+        }
+        return true;
+
+
     } 
         
     /**

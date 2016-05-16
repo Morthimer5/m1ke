@@ -42,17 +42,16 @@ class DiskFileStorage implements FileStorage {
 
         ArrayList<Path> result = new ArrayList<>();
         Path p = workingDirectory.resolve(hash);
-        DirectoryStream<Path> stream;
-        try {
-            stream = Files.newDirectoryStream(p);
 
+
+        try ( DirectoryStream<Path> stream = Files.newDirectoryStream(p)) {
             for (Path entry : stream){
                 result.add(entry);
             }
-            stream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         /*
          * 1) Create a Path variable representing workingDirectory
          * 2) Check if a subdirectory with name.equals(hash) exists
@@ -88,14 +87,13 @@ class DiskFileStorage implements FileStorage {
         FileIdentifier result = new FileIdentifier();
 
         try {
-            result.setHash(String.format("%016d", Files.size(workingDirectory)) + FileUtils.calculateHash(workingDirectory));
+            result.setHash(FileUtils.calculateHash(workingDirectory));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
         //result.setPosition();
-
-
-
         return result;
     }
 
@@ -106,6 +104,8 @@ class DiskFileStorage implements FileStorage {
     @Override
     public InputStream getFileById(FileIdentifier id) {
         // TODO Auto-generated method stub
+
+
         return null;
     }
 
