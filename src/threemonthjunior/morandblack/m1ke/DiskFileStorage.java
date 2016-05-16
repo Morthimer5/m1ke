@@ -3,8 +3,14 @@
  */
 package threemonthjunior.morandblack.m1ke;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +39,20 @@ class DiskFileStorage implements FileStorage {
      */
     private List<Path> filesWithHash(String hash) {
         // TODO return a list of all the files with such hash
-        
+
+        ArrayList<Path> result = new ArrayList<>();
+        Path p = workingDirectory.resolve(hash);
+        DirectoryStream<Path> stream;
+        try {
+            stream = Files.newDirectoryStream(p);
+
+            for (Path entry : stream){
+                result.add(entry);
+            }
+            stream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         /*
          * 1) Create a Path variable representing workingDirectory
          * 2) Check if a subdirectory with name.equals(hash) exists
@@ -45,7 +64,7 @@ class DiskFileStorage implements FileStorage {
          * 
          * */
         
-        return new ArrayList<Path>();   
+        return result;
     }
     
     /**
@@ -54,8 +73,10 @@ class DiskFileStorage implements FileStorage {
      */
     public DiskFileStorage(Path workingDirectory) {
         // TODO validate input
-        
-        this.workingDirectory = workingDirectory; 
+        if(!Files.exists(workingDirectory) && !Files.isDirectory(workingDirectory)) throw new IllegalArgumentException("Working directory " + workingDirectory + " is not valid!");
+
+        this.workingDirectory = workingDirectory;
+
     }
 
     /* (non-Javadoc)
@@ -64,8 +85,20 @@ class DiskFileStorage implements FileStorage {
     @Override
     public FileIdentifier storeFileAndGetID(InputStream data) {
         // TODO Auto-generated method stub
-        return null;
+        FileIdentifier result = new FileIdentifier();
+
+        try {
+            result.setHash(String.format("%016d", Files.size(workingDirectory)) + FileUtils.calculateHash(workingDirectory));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //result.setPosition();
+
+
+
+        return result;
     }
+
 
     /* (non-Javadoc)
      * @see threemonthjunior.morandblack.m1ke.FileStorage#getFileById(threemonthjunior.morandblack.m1ke.FileIdentifier)

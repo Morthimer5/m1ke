@@ -3,8 +3,12 @@
  */
 package threemonthjunior.morandblack.m1ke;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 
@@ -66,9 +70,32 @@ final class FileUtils {
         if (!Files.isRegularFile(pathToFile))
             throw new IllegalArgumentException(
                     "Path doesn't represent a file: '" + pathToFile + "'");
-        
+
+
         // TODO calc hash, see md5_tip.java but use sha-1 instead 
-        
+
+        try {
+            InputStream is = Files.newInputStream(pathToFile);
+
+            MessageDigest md = MessageDigest.getInstance("SHA1");
+            byte[] dataBytes = new byte[1024];
+
+            int read = 0;
+
+            while ((read = is.read(dataBytes)) != -1) {
+                md.update(dataBytes, 0, read);
+            }
+
+            byte[] res = md.digest();
+
+            return bytesToHex(res);
+
+
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         /*
          * get file size from Files.getSize(Path) and calc SHA-1, then concatenate 
          */
